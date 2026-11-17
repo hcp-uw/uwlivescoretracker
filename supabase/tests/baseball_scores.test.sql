@@ -14,8 +14,10 @@ $$;
 
 select ok((select relrowsecurity from pg_class where oid = 'public.baseball_games'::regclass), 'Game RLS enabled');
 select ok((select relrowsecurity from pg_class where oid = 'public.baseball_score_changes'::regclass), 'History RLS enabled');
-select ok(not has_table_privilege('anon', 'public.baseball_games', 'select'), 'Anonymous reads denied');
-select ok(not has_table_privilege('anon', 'public.baseball_score_changes', 'select'), 'Anonymous history reads denied');
+select ok(has_table_privilege('anon', 'public.baseball_games', 'select'), 'Public reads granted');
+select ok(not has_table_privilege('anon', 'public.baseball_games', 'insert,update,delete'), 'Anonymous game writes denied');
+select ok(has_table_privilege('anon', 'public.baseball_score_changes', 'select'), 'Public history reads granted');
+select ok(not has_table_privilege('anon', 'public.baseball_score_changes', 'insert,update,delete'), 'Anonymous history writes denied');
 select ok(has_table_privilege('authenticated', 'public.baseball_games', 'select'), 'Authenticated reads granted');
 select ok(not has_table_privilege('authenticated', 'public.baseball_games', 'insert,update,delete'), 'Browser game writes denied');
 select ok(not has_table_privilege('authenticated', 'public.baseball_score_changes', 'insert,update,delete'), 'Browser history writes denied');
@@ -30,6 +32,11 @@ select is((select count(*) from public.baseball_score_changes where event_id = '
 select ok((select baseline from public.baseball_score_changes where event_id = '999000001'), 'Initial observation labeled baseline');
 select is((select uw_score from public.baseball_games where event_id = '999000001'), null::integer, 'Absent score stays null');
 select is((select next_poll_at from public.baseball_games where event_id = '999000001'), '2026-11-07T20:15:00Z'::timestamptz, 'Polling begins fifteen minutes before kickoff');
+
+set local role anon;
+select is((select count(*) from public.baseball_games where event_id = '999000001'), 1::bigint, 'RLS permits public game reads');
+select is((select count(*) from public.baseball_score_changes where event_id = '999000001'), 1::bigint, 'RLS permits public history reads');
+reset role;
 
 set local role authenticated;
 select is((select count(*) from public.baseball_games where event_id = '999000001'), 1::bigint, 'RLS permits authenticated game reads');

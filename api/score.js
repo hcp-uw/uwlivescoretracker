@@ -59,12 +59,24 @@ async function readPreviousGames(supabase, table = "football_games") {
   }
 }
 
+// The season schedule. Postponed/canceled games are included so the schedule
+// can show them; `nextGame` above still skips them.
+async function readUpcomingGames(supabase, table = "football_games") {
+  const { data, error } = await supabase.from(table).select(GAME_COLUMNS)
+    .eq("state", "pre").eq("completed", false)
+    .order("kickoff", { ascending: true }).order("event_id", { ascending: true })
+    .range(0, 99);
+  if (error) throw new Error("Unable to read upcoming games");
+  return data;
+}
+
 async function handleScore(req, res, table = "football_games") {
   res.set("Cache-Control", "no-store");
   try {
-    const [[active, final, next], previousGames] = await Promise.all([
+    const [[active, final, next], previousGames, upcomingGames] = await Promise.all([
       readScores(req.supabase, table),
       readPreviousGames(req.supabase, table),
+      readUpcomingGames(req.supabase, table),
     ]);
     if (!active && !final && !next) {
       // A season with only canceled/postponed games is still collected data.
@@ -78,6 +90,7 @@ async function handleScore(req, res, table = "football_games") {
     }
     const result = buildScoreResponse(active, final, next);
     result.previousGames = previousGames.map(publicGame);
+    result.upcomingGames = upcomingGames.map(publicGame);
     return res.json(result);
   } catch (error) {
     console.error(JSON.stringify({ event: "score_read_error", table, error: error.message }));
@@ -106,4 +119,4 @@ Router.get("/baseball", scoreRequestDiagnostics, (req, res) => handleScore(req, 
 Router.get("/mens-basketball", scoreRequestDiagnostics, (req, res) => handleScore(req, res, "mens_basketball_games"));
 Router.get("/womens-basketball", scoreRequestDiagnostics, (req, res) => handleScore(req, res, "womens_basketball_games"));
 
-module.exports = { Router, handleScore, readScores, readPreviousGames, publicGame, buildScoreResponse, scoreRequestDiagnostics };
+module.exports = { Router, handleScore, readScores, readPreviousGames, readUpcomingGames, publicGame, buildScoreResponse, scoreRequestDiagnostics };

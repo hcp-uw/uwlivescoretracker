@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { EventEmitter } = require("node:events");
-const { buildScoreResponse, handleScore, readPreviousGames, scoreRequestDiagnostics } = require("../api/score");
+const { buildScoreResponse, handleScore, readPreviousGames, readUpcomingGames, scoreRequestDiagnostics } = require("../api/score");
 const { observation } = require("./fixtures");
 
 const now = new Date("2026-11-07T20:16:00Z");
@@ -89,6 +89,30 @@ test("football history reads every page in stable newest-first order", async () 
   assert.deepEqual(calls.at(-1), [500, 999]);
 });
 
+test("route returns the upcoming schedule soonest-first with public fields", async () => {
+  const next = observation({ event_id: "201" });
+  const later = observation({ event_id: "202", kickoff: "2026-11-14T20:00:00Z", status: "STATUS_POSTPONED" });
+  const res = response();
+  await handleScore({ supabase: fakeSupabase([null, null, next, [], [next, later]]) }, res);
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body.upcomingGames.map((game) => game.eventId), ["201", "202"]);
+  assert.equal(res.body.upcomingGames[1].status, "STATUS_POSTPONED");
+  assert.equal("next_poll_at" in res.body.upcomingGames[0], false);
+});
+
+test("upcoming schedule reads pregame games in kickoff order", async () => {
+  const calls = [];
+  const client = { from(table) { calls.push(["from", table]); return {
+    select() { return this; },
+    eq(column, value) { calls.push([column, value]); return this; },
+    order(column, options) { calls.push([column, options.ascending]); return this; },
+    async range(start, end) { calls.push([start, end]); return { data: [], error: null }; },
+  }; } };
+  assert.deepEqual(await readUpcomingGames(client, "baseball_games"), []);
+  assert.deepEqual(calls, [["from", "baseball_games"], ["state", "pre"], ["completed", false],
+    ["kickoff", true], ["event_id", true], [0, 99]]);
+});
+
 test("baseball and basketball routes return each team's completed games", async () => {
   for (const table of ["baseball_games", "mens_basketball_games", "womens_basketball_games"]) {
     const final = observation({ completed: true, state: "post" });
@@ -98,7 +122,7 @@ test("baseball and basketball routes return each team's completed games", async 
     const res = response();
     await handleScore({ supabase: { from(name) { tables.push(name); return source.from(name); } } }, res, table);
     assert.equal(res.statusCode, 200);
-    assert.deepEqual(tables, [table, table, table, table]);
+    assert.deepEqual(tables, [table, table, table, table, table]);
     assert.deepEqual(res.body.previousGames.map((game) => game.eventId), [final.event_id, "123"]);
     assert.equal("next_poll_at" in res.body.previousGames[0], false);
   }

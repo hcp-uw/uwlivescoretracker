@@ -129,6 +129,15 @@ async function requireAuth(req, res, next) {
   }
 }
 
+// Scores are public. Signed-in callers still go through requireAuth so a bad or
+// expired token is reported instead of silently downgraded; callers without a
+// token read with the publishable key, i.e. the database's `anon` role and RLS.
+function optionalAuth(req, res, next) {
+  if (req.headers.authorization) return requireAuth(req, res, next);
+  req.supabase = supabase;
+  return next();
+}
+
 // This separate server-only client never receives a user's session.
 const serverSecretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 const accountDirectory = serverSecretKey
@@ -136,7 +145,7 @@ const accountDirectory = serverSecretKey
   : null;
 
 app.use("/auth", createUserRouter({ supabase, accountDirectory }));
-app.use("/score", requireAuth, require("./api/score").Router); // protected route
+app.use("/score", optionalAuth, require("./api/score").Router); // public; see optionalAuth
 
 app.head("/", (req, res) => res.status(200).end()); // Possible keepalive
 
@@ -158,4 +167,4 @@ nextApp.prepare().then(() => {
   });
 });
 
-module.exports = { app, server, requireAuth };
+module.exports = { app, server, requireAuth, optionalAuth };
