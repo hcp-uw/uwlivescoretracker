@@ -9,8 +9,16 @@
   --purple: #4b2e83;
   --purple-light: #8f6fd1;
   --gold: #e8c547;
-  --live: #ef4444;
   --success: #22c55e;
+  /* Game outcomes. Live games use --gold so they never read as a loss. */
+  --win: #22c55e;
+  --win-text: #4ade80;
+  --win-tint: #22c55e14;
+  --win-tint-strong: #22c55e26;
+  --loss: #ef4444;
+  --loss-text: #f87171;
+  --loss-tint: #ef444414;
+  --loss-tint-strong: #ef444426;
 }
 
 * { box-sizing: border-box; }
@@ -39,24 +47,21 @@ h1, h2, h3 { margin: 0; }
 .page-narrow { max-width: 440px; padding-top: 48px; }
 .page-title { margin-bottom: 16px; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; }
 
-/* Sport tabs: ~20 sports, so the tab bar scrolls sideways instead of wrapping. */
-.sport-tab-list { display: flex; gap: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: thin; }
-.sport-tab { flex: none; min-height: 36px; padding: 8px 14px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); color: var(--muted); font-size: 13px; font-weight: 700; white-space: nowrap; }
-.sport-tab:hover { color: var(--foreground); border-color: var(--muted); }
-.sport-tab[aria-selected="true"] { border-color: var(--purple-light); background: var(--purple); color: #fff; }
-.sport-tab:focus-visible { outline-offset: -2px; }
-.sport-panel { margin-top: 16px; }
-.sport-panel:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
-.sport-panel-title { margin-bottom: 12px; font-size: 20px; font-weight: 800; }
+/* Sport navigation: scrolls sideways on narrow screens instead of wrapping. */
+.sport-nav { border-bottom: 1px solid var(--border); background: var(--background); }
+.sport-nav-inner { display: flex; gap: 4px; max-width: 1100px; margin: 0 auto; padding: 8px 16px; overflow-x: auto; scrollbar-width: none; }
+.sport-nav-link { flex: none; padding: 6px 12px; border-radius: 999px; color: var(--muted); font-size: 13px; font-weight: 700; white-space: nowrap; }
+.sport-nav-link:hover { color: var(--foreground); background: var(--surface-raised); }
+.sport-nav-link[aria-current="page"] { background: var(--purple); color: #fff; }
 
 /* Scores */
-.scores-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.scores-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 16px; }
 .scores-toolbar .page-title { margin-bottom: 0; }
+.page-subtitle { margin: 4px 0 0; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.scores-toolbar-actions { display: flex; align-items: center; gap: 12px; }
+.scores-updated { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .score-refresh-button { flex: none; min-height: 36px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface-raised); color: var(--foreground); font-size: 13px; font-weight: 700; }
 .score-refresh-button:hover:not(:disabled) { border-color: var(--purple-light); }
-.scores-feed-status { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-bottom: 16px; color: var(--muted); font-size: 12px; }
-.scores-feed-status + .form-notice, .form-notice + .sport-tabs { margin-bottom: 16px; }
-.score-sign-in { color: var(--gold); text-decoration: underline; }
 .score-api-log { margin-top: 24px; padding: 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); font-size: 12px; }
 .score-api-log summary { cursor: pointer; overflow-wrap: anywhere; line-height: 1.6; }
 .score-api-log > summary { color: var(--gold); font-size: 14px; font-weight: 700; }
@@ -66,20 +71,43 @@ h1, h2, h3 { margin: 0; }
 .score-api-log pre { max-height: 360px; overflow: auto; margin-bottom: 0; padding: 12px; border: 1px solid var(--border); font-size: 12px; }
 .api-log-success { color: var(--success); font-weight: 700; }
 .api-log-error { color: #fca5a5; font-weight: 700; }
-.scores-section { border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
-.scores-heading { padding: 10px 16px; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
-.scores-empty { padding: 40px 16px; text-align: center; }
-.scores-empty-title { margin: 0 0 4px; font-size: 15px; font-weight: 700; }
-.scores-empty-text { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+.scores-section { margin-top: 16px; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
+.scores-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+.scores-heading h2 { margin: 0; color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+.season-record { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); animation: live-pulse 1.4s ease-in-out infinite; }
+@keyframes live-pulse { 50% { opacity: .3; } }
+.scores-empty-text { margin: 0; padding: 24px 16px; color: var(--muted); font-size: 13px; text-align: center; }
 .scores-list { margin: 0; padding: 0; list-style: none; }
-.score-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 16px; padding: 12px 16px; border-top: 1px solid var(--border); }
+
+/* Each row's left edge and score carry the outcome: green for a UW win, red
+   for a loss, gold while live. The badge spells it out for non-color readers. */
+.score-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 16px; padding: 12px 16px; border-top: 1px solid var(--border); border-left: 3px solid transparent; }
 .score-row:first-child { border-top: 0; }
-.score-opponent { margin: 0; font-size: 15px; font-weight: 700; }
+.score-row.win { border-left-color: var(--win); background: linear-gradient(90deg, var(--win-tint), transparent 55%); }
+.score-row.loss { border-left-color: var(--loss); background: linear-gradient(90deg, var(--loss-tint), transparent 55%); }
+.score-row.live { border-left-color: var(--gold); }
+.score-main { min-width: 0; }
+.score-sport { display: inline-block; margin-bottom: 2px; color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
+.score-sport:hover { text-decoration: underline; }
+.score-opponent { margin: 0; font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+.score-home-away { color: var(--muted); font-weight: 600; }
 .score-date { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
-.score-status { padding: 3px 8px; border-radius: 3px; background: var(--surface-raised); color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
-.score-status.live { background: var(--live); color: #fff; }
-.score-status.final { color: var(--foreground); }
+.score-status { min-width: 52px; padding: 3px 8px; border-radius: 3px; background: var(--surface-raised); color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .5px; text-align: center; text-transform: uppercase; }
+.score-status.win { background: var(--win-tint-strong); color: var(--win-text); }
+.score-status.loss { background: var(--loss-tint-strong); color: var(--loss-text); }
+.score-status.tie, .score-status.final { color: var(--foreground); }
+.score-status.live { background: var(--gold); color: #15120a; }
+.score-status.stopped { background: transparent; box-shadow: inset 0 0 0 1px var(--border); }
 .score-value { min-width: 72px; margin: 0; text-align: right; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.score-row.win .score-value { color: var(--win-text); }
+.score-row.loss .score-value { color: var(--loss-text); }
+.score-dash, .score-pending { color: var(--muted); font-weight: 600; }
+
+.sport-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 24px; }
+.sport-card { display: flex; justify-content: space-between; padding: 14px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); font-size: 14px; font-weight: 700; }
+.sport-card:hover { border-color: var(--purple-light); }
 
 /* Sign-in card */
 .auth-card { padding: 24px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
@@ -116,5 +144,5 @@ input:focus { outline: 0; border-color: var(--purple-light); box-shadow: 0 0 0 2
   .brand-name { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; }
+  * { transition: none !important; animation: none !important; }
 }

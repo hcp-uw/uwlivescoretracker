@@ -78,8 +78,8 @@ freshness timestamps and polling deadlines) and `football_score_changes`
 running `npm run collect:scores`; neither the app nor worker applies it automatically.
 Preview pending changes before pushing them to your hosted project.
 
-Both tables enable RLS and allow authenticated reads. Anonymous access and
-browser writes are denied. `record_football_observation(jsonb, boolean)` is
+Both tables enable RLS and allow authenticated reads (and public reads once
+[public score reads](#public-score-reads) is applied). Browser writes are denied. `record_football_observation(jsonb, boolean)` is
 executable only by `service_role`; it atomically updates the latest observation
 and history under a per-game lock. The collector uses the server-only secret or
 service-role key; the Express score route uses the caller's authenticated client.
@@ -123,3 +123,15 @@ Apply `20261116000000_collect_basketball_scores.sql` before running
 `npm run collect:basketball`. One worker collects both men’s and women’s scores
 using the server-only Supabase credentials. Each team has its own games and
 score change tables with authenticated read access and server-only ingestion.
+
+## Public score reads
+
+`20261117000000_public_score_reads.sql` lets signed-out visitors read every
+score table (`*_games` and `*_score_changes`) by granting `select` to `anon`
+with matching RLS policies. Writes are unchanged: only the server can call the
+`record_*_observation` functions. The Express `/score` routes use the caller's
+token when one is sent and the publishable (anon) key otherwise.
+
+Apply it with `npm run supabase:push` before deploying the public pages. Until
+then, signed-out visitors get "Stored scores are temporarily unavailable" and
+signed-in users still see scores.

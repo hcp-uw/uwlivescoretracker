@@ -1,5 +1,6 @@
 import "./globals.css";
 import SiteHeader from "@/components/SiteHeader";
+import SportNav from "@/components/SportNav";
 
 export const metadata = {
   title: "UW Score Tracker",
@@ -11,6 +12,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <SiteHeader />
+        <SportNav />
         {children}
       </body>
     </html>

@@ -1,12 +1,13 @@
-// UW's NCAA Division I programs, in the order their tabs appear.
-// `id` is a stable key; once the score API exists, use it to match a
-// sport to its scores.
+// UW's NCAA Division I programs. `id` is a stable key used in URLs
+// (/sports/<id>) and by the score API. `hasScores` marks sports with a
+// collector; only those get navigation links and pages, so visitors never land
+// on an empty sport. Set it when a sport's collector and API route ship.
 const SPORTS = [
-  { id: "football", name: "Football" },
-  { id: "mens-basketball", name: "Men's Basketball" },
-  { id: "womens-basketball", name: "Women's Basketball" },
+  { id: "football", name: "Football", hasScores: true },
+  { id: "mens-basketball", name: "Men's Basketball", shortName: "Men's Hoops", hasScores: true },
+  { id: "womens-basketball", name: "Women's Basketball", shortName: "Women's Hoops", hasScores: true },
   { id: "volleyball", name: "Volleyball" },
-  { id: "baseball", name: "Baseball" },
+  { id: "baseball", name: "Baseball", hasScores: true },
   { id: "softball", name: "Softball" },
   { id: "mens-soccer", name: "Men's Soccer" },
   { id: "womens-soccer", name: "Women's Soccer" },
@@ -24,4 +25,10 @@ const SPORTS = [
   { id: "womens-track-and-field", name: "Women's Track & Field" },
 ];
 
-export { SPORTS };
+const SCORED_SPORTS = SPORTS.filter((sport) => sport.hasScores);
+
+function findScoredSport(id) {
+  return SCORED_SPORTS.find((sport) => sport.id === id) || null;
+}
+
+export { SPORTS, SCORED_SPORTS, findScoredSport };

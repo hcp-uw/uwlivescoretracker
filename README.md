@@ -17,8 +17,17 @@ npm run dev
 npm run collect:all
 ```
 
-The Live Scores page is at `/`; sign in at `/login`. During development, the
-score API log appears below the sports tabs.
+Pages:
+
+- `/`: Today. Live games, each sport's next game and recent results across sports.
+- `/sports/<id>`: one sport's live game, upcoming schedule and results grouped by
+  season with the W–L record. Only sports marked `hasScores` in
+  `src/utils/sports.js` get a page and a navigation link.
+- `/login`: optional sign-in. Scores are public.
+
+Final scores are colored by outcome: green for a UW win, red for a loss. Live
+games use gold. During development, the score API log appears at the bottom of
+the score pages.
 
 ## Database schema
 
@@ -61,7 +70,8 @@ Clock-only updates do not create history rows.
 | `period`, `clock` | Period and clock, when available. |
 | `baseline` | True for the first observation stored for a game. |
 
-Signed-in users can read the score tables. The server-side collector writes through
+Anyone can read the score tables, including signed-out visitors (see
+`20261117000000_public_score_reads.sql`). The server-side collector writes through
 the `record_football_observation` database function.
 
 ### Baseball tables

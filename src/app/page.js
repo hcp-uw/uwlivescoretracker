@@ -1,5 +1,5 @@
-import LiveScoresDashboard from "@/components/LiveScoresDashboard";
+import TodayDashboard from "@/components/TodayDashboard";
 
 export default function Home() {
-  return <LiveScoresDashboard />;
+  return <TodayDashboard />;
 }

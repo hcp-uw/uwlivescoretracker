@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+// Sport links live in SportNav below this bar.
 const NAV_LINKS = [
-  { href: "/", label: "Live Scores" },
   { href: "/login", label: "Sign in" },
 ];
 
-// Top bar shown on every page. Keeping sign-in on its own page leaves the
-// home page free for scores.
+// Top bar shown on every page. Scores are public, so sign-in is optional and
+// kept on its own page.
 export default function SiteHeader() {
   const pathname = usePathname();
 
