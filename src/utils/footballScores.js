@@ -69,9 +69,16 @@ function resultsBySeason(results) {
     .map(([season, games]) => ({ season, games, record: seasonRecord(games) }));
 }
 
-// The Today page across sports: every live game, each sport's next playable
-// game (postponed/canceled ones skipped), and the most recent finals.
-function todaySummary(sports, responses, recentLimit = 6) {
+const UP_NEXT_CARD_LIMIT = 3;
+
+function takeUpcomingCards(upcoming, limit = UP_NEXT_CARD_LIMIT) {
+  const cap = Number(limit) > 0 ? Number(limit) : UP_NEXT_CARD_LIMIT;
+  return upcoming.filter((row) => !row.stopped).slice(0, cap);
+}
+
+// The Today page across sports: every live game, the next few upcoming games
+// across sports (postponed/canceled skipped), and the most recent finals.
+function todaySummary(sports, responses, recentLimit = 6, upNextLimit = UP_NEXT_CARD_LIMIT) {
   const live = [];
   const upNext = [];
   const recent = [];
@@ -79,13 +86,12 @@ function todaySummary(sports, responses, recentLimit = 6) {
     const { live: sportLive, upcoming, results } = splitGames(footballGames(responses[sport.id]));
     const tag = (row) => ({ ...row, sport });
     live.push(...sportLive.map(tag));
-    const next = upcoming.find((row) => !row.stopped);
-    if (next) upNext.push(tag(next));
+    upNext.push(...upcoming.filter((row) => !row.stopped).map(tag));
     recent.push(...results.map(tag));
   }
   return {
     live,
-    upNext: upNext.sort(byKickoff),
+    upNext: upNext.sort(byKickoff).slice(0, upNextLimit),
     recent: recent.sort((a, b) => byKickoff(b, a)).slice(0, recentLimit),
   };
 }
@@ -99,6 +105,8 @@ function scoreRefreshInterval(response, now = Date.now()) {
 }
 
 export {
+  UP_NEXT_CARD_LIMIT,
+  takeUpcomingCards,
   footballGames, gameResult, splitGames, seasonRecord, formatRecord, resultsBySeason,
   todaySummary, scoreRefreshInterval,
 };

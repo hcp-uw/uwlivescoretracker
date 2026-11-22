@@ -119,3 +119,15 @@ test("today summary merges sports and skips postponed games for up next", async 
   assert.deepEqual(summary.recent.map((row) => row.id), ["bb-old"]);
   assert.deepEqual(todaySummary([football], {}), { live: [], upNext: [], recent: [] });
 });
+
+test("up next cards stop at three playable games", async () => {
+  const { takeUpcomingCards } = await helpers;
+  const rows = Array.from({ length: 8 }, (_, index) => ({
+    id: String(index + 1),
+    status: "upcoming",
+    stopped: false,
+    kickoff: `2026-12-${String(index + 1).padStart(2, "0")}T00:00:00Z`,
+  }));
+  rows.push({ id: "postponed", status: "upcoming", stopped: true, kickoff: "2026-12-20T00:00:00Z" });
+  assert.deepEqual(takeUpcomingCards(rows).map((row) => row.id), ["1", "2", "3"]);
+});
